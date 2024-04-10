@@ -1,6 +1,16 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const puppeteer = require("puppeteer");
+const axios = require("axios").default;
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const cheerio = require("cheerio");
+const { scrollPage } = require("../helper/scrolling");
+const { delay } = require("../helper/helper");
+require("dotenv").config();
+puppeteer.use(StealthPlugin());
+
+
 
 const app = express();
 
@@ -10,101 +20,115 @@ const port = 3000;
 
 app.get("/", async (req, res) => {
   try {
-    // Launch the browser and open a new blank page
+    console.log("crawling imdb");
+    const url = `https://www.imdb.com/chart/top/?ref_=nv_mv_250`;
     const browser = await puppeteer.launch({
-      headless: false,
+      ignoreDefaultArgs: ['--disable-extensions'],
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      headless: "new",
     });
     const page = await browser.newPage();
-
-    // Navigate the page to a URL
-    await page.goto(req.body.url);
-
-    // Wait and click on first result
-
-    await page.waitForSelector(
-      "#__next > main > div > section.ipc-page-background.ipc-page-background--base.sc-304f99f6-0.eaRXHu > section > div:nth-child(4) > section > section > div.sc-e226b0e3-3.jJsEuz > div.sc-dffc6c81-0.iwmAVw > h1"
-    );
-
-    let title = await page.$(
-      "#__next > main > div > section.ipc-page-background.ipc-page-background--base.sc-304f99f6-0.eaRXHu > section > div:nth-child(4) > section > section > div.sc-e226b0e3-3.jJsEuz > div.sc-dffc6c81-0.iwmAVw > h1"
-    );
-    let titleInfo = await page.evaluate((el) => el.textContent, title);
-    console.log(titleInfo);
-
-    await page.waitForSelector(
-      "#__next > main > div > section.ipc-page-background.ipc-page-background--base.sc-304f99f6-0.eaRXHu > section > div:nth-child(4) > section > section > div.sc-e226b0e3-3.jJsEuz > div.sc-dffc6c81-0.iwmAVw > ul > li:nth-child(1)"
-    );
-
-    let releaseDate = await page.$(
-      "#__next > main > div > section.ipc-page-background.ipc-page-background--base.sc-304f99f6-0.eaRXHu > section > div:nth-child(4) > section > section > div.sc-e226b0e3-3.jJsEuz > div.sc-dffc6c81-0.iwmAVw > ul > li:nth-child(1)"
-    );
-    let releaseInfo = await page.evaluate((el) => el.textContent, releaseDate);
-    console.log(releaseInfo);
-
-    await page.waitForSelector(
-      "#__next > main > div > section.ipc-page-background.ipc-page-background--base.sc-304f99f6-0.eaRXHu > section > div:nth-child(4) > section > section > div.sc-e226b0e3-3.jJsEuz > div.sc-3a4309f8-0.fjtZsE.sc-dffc6c81-1.fJrHDo > div > div:nth-child(1) > a > span > div > div.sc-bde20123-0.gtEgaf > div.sc-bde20123-2.gYgHoj > span.sc-bde20123-1.iZlgcd"
-    );
-
-    let rating = await page.$(
-      "#__next > main > div > section.ipc-page-background.ipc-page-background--base.sc-304f99f6-0.eaRXHu > section > div:nth-child(4) > section > section > div.sc-e226b0e3-3.jJsEuz > div.sc-3a4309f8-0.fjtZsE.sc-dffc6c81-1.fJrHDo > div > div:nth-child(1) > a > span > div > div.sc-bde20123-0.gtEgaf > div.sc-bde20123-2.gYgHoj > span.sc-bde20123-1.iZlgcd"
-    );
-    let ratingInfo = await page.evaluate((el) => el.textContent, rating);
-    console.log(ratingInfo);
-
-    await page.waitForSelector(
-      "#__next > main > div > section.ipc-page-background.ipc-page-background--base.sc-304f99f6-0.eaRXHu > section > div:nth-child(4) > section > section > div.sc-e226b0e3-3.jJsEuz > div.sc-dffc6c81-0.iwmAVw > ul > li:nth-child(3)"
-    );
-
-    let movieTime = await page.$(
-      "#__next > main > div > section.ipc-page-background.ipc-page-background--base.sc-304f99f6-0.eaRXHu > section > div:nth-child(4) > section > section > div.sc-e226b0e3-3.jJsEuz > div.sc-dffc6c81-0.iwmAVw > ul > li:nth-child(3)"
-    );
-    let timeInfo = await page.evaluate((el) => el.textContent, movieTime);
-    console.log(timeInfo);
-
-    await page.waitForSelector(
-      "#__next > main > div > section.ipc-page-background.ipc-page-background--base.sc-304f99f6-0.eaRXHu > div > section > div > div.sc-9178d6fe-1.kFxVZc.ipc-page-grid__item.ipc-page-grid__item--span-2 > section.ipc-page-section.ipc-page-section--base.sc-bfec09a1-0.gmonkL.title-cast.title-cast--movie.celwidget > ul > li:nth-child(1) > div > ul > li > a"
-    );
-
-    let movieDirector = await page.$(
-      "#__next > main > div > section.ipc-page-background.ipc-page-background--base.sc-304f99f6-0.eaRXHu > div > section > div > div.sc-9178d6fe-1.kFxVZc.ipc-page-grid__item.ipc-page-grid__item--span-2 > section.ipc-page-section.ipc-page-section--base.sc-bfec09a1-0.gmonkL.title-cast.title-cast--movie.celwidget > ul > li:nth-child(1) > div > ul > li > a"
-    );
-    let directorInfo = await page.evaluate(
-      (el) => el.textContent,
-      movieDirector
-    );
-    console.log(directorInfo);
-
-    // await page.waitForSelector(
-    //   "#__next > main > div.ipc-page-content-container.ipc-page-content-container--center.sc-383f2ac5-0.bfcGjo > div.ipc-page-grid.ipc-page-grid--bias-left > div.celwidget > div > div:nth-child(3) > div.sc-8dcff363-12.GYSnw > div.sc-8dcff363-13.jWSVUL"
-    // );
-
-    // let movieSummary = await page.$(
-    //   "#__next > main > div.ipc-page-content-container.ipc-page-content-container--center.sc-383f2ac5-0.bfcGjo > div.ipc-page-grid.ipc-page-grid--bias-left > div.celwidget > div > div:nth-child(3) > div.sc-8dcff363-12.GYSnw > div.sc-8dcff363-13.jWSVUL"
-    // );
-    // let summaryInfo = await page.evaluate((el) => el.textContent, movieSummary);
-    // console.log(summaryInfo);
-
-    await browser.close();
-    const movies = {
-      title: titleInfo,
-      year: releaseInfo,
-      time: timeInfo,
-      rating: ratingInfo,
-      director: directorInfo,
-      // summary: summaryInfo,
-    };
-    // Create an empty array to hold movie data
-    let movieArray = [];
-    // Push each movie's data into the array as an object
-    movieArray.push({
-      title: titleInfo,
-      year: releaseInfo,
-      time: timeInfo,
-      rating: ratingInfo,
-      director: directorInfo,
-      // summary: summaryInfo,
+    await page.setExtraHTTPHeaders({
+      'Accept-Language': 'en-US,en;q=0.9',
     });
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
 
+    await page.goto(url, { waitUntil: 'domcontentloaded' })
+    await page.solveRecaptchas(); // Use the plugin to solve reCAPTCHA
+    await delay(1000);
+    await scrollPage(page)
+
+    const data = await page.content();
+    // console.log(data);
+    await browser.close();
+    const $ = cheerio.load(data);
+    const listItems = $("div.ProductListWithLoadMore0__listingGrid div.ProductList0__productItemContainer");
+    const items = [];
+    console.log(listItems.length);
+    listItems.each((idx, el) => {
+      let productData = $(el)
+      const item = {};
+      item.image = productData
+        .children("a")
+        .children("div.ProductItem25")
+        .children("div.ProductItem25__p")
+        .children("div.ProductItem25__imageContainer")
+        .children("div")
+        .children("div.DoubleImage18")
+        .children("div.DoubleImage18")
+        .children("div.AspectRatio18")
+        .children("div.AspectRatio18__content")
+        .children("div.Image18__imageContainer")
+        .children("picture")
+        .children("img")
+        .attr("src");
+      if (!item.image) {
+        // Run the second case to get a value for item.image
+        item.image = productData
+          .children("a")
+          .children("div.ProductItem25")
+          .children("div.ProductItem25__p")
+          .children("div.ProductItem25__imageContainer")
+          .children("div")
+          .children("div.ViewportObserver1")
+          .children("div.DoubleImage18")
+          .children("div.DoubleImage18")
+          .children("div.AspectRatio18")
+          .children("div.AspectRatio18__content")
+          .children("div.Image18__imageContainer")
+          .children("picture")
+          .children("img")
+          .attr("src");
+      }
+      //  Prepending the base image URL if the link doesn't start with 'https:'
+      if (item.image && !item.image.startsWith('https:')) {
+        // Prepend the base URL
+        item.image = 'https:' + item.image;
+      }
+      item.link = productData
+        .children("a")
+        .attr("href");
+      // Prepending the base URL if the link doesn't start with https://www.theoutnet.com/'
+      if (item.link && !item.link.startsWith('https://www.theoutnet.com/')) {
+        // Prepend the base URL
+        item.link = 'https://www.theoutnet.com' + item.link;
+      }
+      item.name = productData
+        .children("a")
+        .children("div.ProductItem25")
+        .children("div.ProductItem25__p")
+        .children("div.ProductItem25__skeletonContainer")
+        .children("div.ProductItem25__content")
+        .children("span.ProductItem25__details")
+        .children("span.ProductItem25__name")
+        .text()
+        .trim();
+
+      item.price = productData
+        .children("a")
+        .children("div.ProductItem25")
+        .children("div.ProductItem25__p")
+        .children("div.ProductItem25__skeletonContainer")
+        .children("div.ProductItem25__content")
+        .children("div.PriceWithSchema10")
+        .children("div.PriceWithSchema10__value")
+        .text();
+
+      item.old_price = productData
+        .children("a")
+        .children("div.ProductItem25")
+        .children("div.ProductItem25__p")
+        .children("div.ProductItem25__skeletonContainer")
+        .children("div.ProductItem25__content")
+        .children("div.PriceWithSchema10")
+        .children("div.PriceWithSchema10__discountContainer")
+        .children("s.PriceWithSchema10__wasPriceListingPage")
+        .text()
+        .trim();
+      
+      items.push(item);
+    });
+    return items;
     return res.status(200).json({
       method: req.method,
       status: "Sucessful",
