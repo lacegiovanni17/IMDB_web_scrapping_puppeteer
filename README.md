@@ -1,7 +1,7 @@
 # IMDB Puppeteer WebScraping
 Designed and implemented a NodeJS script using Puppeteer to scrape IMDb website for a list of movies and generate an array of movie objects with specific details.
 
-### []()
+### [![postman results](image.png)]()
 
 
 ## About
@@ -22,6 +22,7 @@ The purpose of this project task is to evaluate my abilities in creating a Node.
 * Typescript
 * Puppeteer
 * Nodemon
+* Postman
 
 
 
