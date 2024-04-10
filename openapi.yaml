@@ -1,0 +1,33 @@
+openapi: 3.0.0
+info:
+  title: Movie Data Scraper API
+  version: 1.0.0
+  description: An API to scrape movie data from a website
+paths:
+  /:
+    get:
+      summary: Get Movie Data
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              example:
+                method: GET
+                status: Successful
+                message: Data scraped successfully
+                movieArray:
+                  - title: "Movie Title"
+                    year: "Release Year"
+                    time: "Movie Time"
+                    rating: "Movie Rating"
+                    director: "Movie Director"
+                    summary: "Movie Summary"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              example:
+                method: GET
+                status: Error
+                message: An error occurred while scraping data
