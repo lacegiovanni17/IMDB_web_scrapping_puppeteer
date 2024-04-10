@@ -1,14 +1,8 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const puppeteer = require("puppeteer");
-const axios = require("axios").default;
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const cheerio = require("cheerio");
-const { scrollPage } = require("../helper/scrolling");
-const { delay } = require("../helper/helper");
-require("dotenv").config();
-puppeteer.use(StealthPlugin());
+const { scrollPage, delay } = require("./helper/scrolling");
 
 
 
@@ -25,7 +19,7 @@ app.get("/", async (req, res) => {
     const browser = await puppeteer.launch({
       ignoreDefaultArgs: ['--disable-extensions'],
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      headless: "new",
+      headless: false,
     });
     const page = await browser.newPage();
     await page.setExtraHTTPHeaders({
@@ -34,7 +28,6 @@ app.get("/", async (req, res) => {
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
 
     await page.goto(url, { waitUntil: 'domcontentloaded' })
-    await page.solveRecaptchas(); // Use the plugin to solve reCAPTCHA
     await delay(1000);
     await scrollPage(page)
 
@@ -42,99 +35,72 @@ app.get("/", async (req, res) => {
     // console.log(data);
     await browser.close();
     const $ = cheerio.load(data);
-    const listItems = $("div.ProductListWithLoadMore0__listingGrid div.ProductList0__productItemContainer");
+    const listItems = $("ul.ipc-metadata-list li");
     const items = [];
     console.log(listItems.length);
     listItems.each((idx, el) => {
       let productData = $(el)
       const item = {};
       item.image = productData
-        .children("a")
-        .children("div.ProductItem25")
-        .children("div.ProductItem25__p")
-        .children("div.ProductItem25__imageContainer")
-        .children("div")
-        .children("div.DoubleImage18")
-        .children("div.DoubleImage18")
-        .children("div.AspectRatio18")
-        .children("div.AspectRatio18__content")
-        .children("div.Image18__imageContainer")
-        .children("picture")
+        .children("div.cli-poster-container")
+        .children("div.ipc-poster")
+        .children("div.ipc-media")
         .children("img")
         .attr("src");
-      if (!item.image) {
-        // Run the second case to get a value for item.image
-        item.image = productData
-          .children("a")
-          .children("div.ProductItem25")
-          .children("div.ProductItem25__p")
-          .children("div.ProductItem25__imageContainer")
-          .children("div")
-          .children("div.ViewportObserver1")
-          .children("div.DoubleImage18")
-          .children("div.DoubleImage18")
-          .children("div.AspectRatio18")
-          .children("div.AspectRatio18__content")
-          .children("div.Image18__imageContainer")
-          .children("picture")
-          .children("img")
-          .attr("src");
-      }
-      //  Prepending the base image URL if the link doesn't start with 'https:'
-      if (item.image && !item.image.startsWith('https:')) {
-        // Prepend the base URL
-        item.image = 'https:' + item.image;
-      }
       item.link = productData
+        .children("div.cli-poster-container")
+        .children("div.ipc-poster")
         .children("a")
         .attr("href");
-      // Prepending the base URL if the link doesn't start with https://www.theoutnet.com/'
-      if (item.link && !item.link.startsWith('https://www.theoutnet.com/')) {
+      // Prepending the base URL if the link doesn't start with https://www.imdb.com/'
+      if (item.link && !item.link.startsWith('https://www.imdb.com/')) {
         // Prepend the base URL
-        item.link = 'https://www.theoutnet.com' + item.link;
+        item.link = 'https://www.imdb.com' + item.link;
       }
       item.name = productData
+        .children("div.ipc-metadata-list-summary-item__c")
+        .children("div.ipc-metadata-list-summary-item__tc")
+        .children("div.sc-b189961a-0")
+        .children("div.ipc-title")
         .children("a")
-        .children("div.ProductItem25")
-        .children("div.ProductItem25__p")
-        .children("div.ProductItem25__skeletonContainer")
-        .children("div.ProductItem25__content")
-        .children("span.ProductItem25__details")
-        .children("span.ProductItem25__name")
+        .children("h3")
         .text()
+        .split(". ")[1]
         .trim();
 
-      item.price = productData
-        .children("a")
-        .children("div.ProductItem25")
-        .children("div.ProductItem25__p")
-        .children("div.ProductItem25__skeletonContainer")
-        .children("div.ProductItem25__content")
-        .children("div.PriceWithSchema10")
-        .children("div.PriceWithSchema10__value")
-        .text();
-
-      item.old_price = productData
-        .children("a")
-        .children("div.ProductItem25")
-        .children("div.ProductItem25__p")
-        .children("div.ProductItem25__skeletonContainer")
-        .children("div.ProductItem25__content")
-        .children("div.PriceWithSchema10")
-        .children("div.PriceWithSchema10__discountContainer")
-        .children("s.PriceWithSchema10__wasPriceListingPage")
+      item.release_date = productData
+        .children("div.ipc-metadata-list-summary-item__c")
+        .children("div.ipc-metadata-list-summary-item__tc")
+        .children("div.sc-b189961a-0")
+        .children("div.sc-b189961a-7")
+        .children("span.sc-b189961a-8")
         .text()
+        .split(" ")[0]
+        .trim()
+        .substring(0, 4);
+
+      item.rating = productData
+        .children("div.ipc-metadata-list-summary-item__c")
+        .children("div.ipc-metadata-list-summary-item__tc")
+        .children("div.sc-b189961a-0")
+        .children("span.sc-b189961a-1")
+        .children("div.sc-e2dbc1a3-0")
+        .children("span.ipc-rating-star")
+        .text()
+        .split("(")[0]
         .trim();
-      
       items.push(item);
     });
-    return items;
-    return res.status(200).json({
-      method: req.method,
-      status: "Sucessful",
-      message: "data scraped succesfully",
-      movieArray,
-    });
+
+      const result = {
+        items: items,
+        response: {
+          method: req.method,
+          status: "Successful",
+          message: "Data scraped successfully",
+        }
+      };
+    return res.status(200).json(result);
   } catch (error) {
     console.log(error);
     return res.status(500).json({
